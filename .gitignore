@@ -1,0 +1,15 @@
+build
+export
+Makefile
+*.make
+
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.sln
+
+## visual studio
+.vs
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
