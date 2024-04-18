@@ -6,9 +6,9 @@
 #include "engine/wgpu/BindGroup.h"
 #include "engine/wgpu/RenderPipeline.h"
 #include "engine/util/Types.h"
-#include "engine/render/Camera.h"
-#include "engine/util/Transform.h"
 #include "engine/util/Color.h"
+#include "engine/util/Transform.h"
+#include "engine/render/Camera.h"
 
 class Sprite 
 {
@@ -24,6 +24,9 @@ public:
     ~Sprite();
 
     void Draw(wgpu::RenderPassEncoder renderPass);
+
+    void SetFilterMode(wgpu::FilterMode filterMode);
+    wgpu::FilterMode GetFilterMode() const { return _filterMode; }
 public:
     Ref<Image> image = nullptr;
     Ref<RenderPipeline> renderPipeline = nullptr;
@@ -37,6 +40,8 @@ private:
         Ref<RenderPipeline> renderPipeline
     );
 
+    void CreateBindGroup();
+
     void UpdateModel();
 private:
     Scoped<Buffer> _vertexBuffer = nullptr;
@@ -44,6 +49,8 @@ private:
     Scoped<Buffer> _uniformBuffer = nullptr;
     Scoped<BindGroup> _bindGroup = nullptr;
     Scoped<Sampler> _sampler = nullptr;
+
+    wgpu::FilterMode _filterMode = wgpu::FilterMode::Linear;
 
     Mat4 _model = Mat4Identity;
 };

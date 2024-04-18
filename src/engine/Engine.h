@@ -21,6 +21,8 @@
 #include "engine/render/Renderer.h"
 #include "engine/render/Camera.h"
 
+#include "engine/system/Memory.h"
+
 #include "engine/util/AssetManager.h"
 #include "engine/util/Math.h"
 #include "engine/util/Types.h"
@@ -31,3 +33,5 @@
 #include "engine/wgpu/ShaderModule.h"
 #include "engine/wgpu/Image.h"
 #include "engine/wgpu/WGPUContext.h"
+#include "engine/wgpu/BindGroup.h"
+#include "engine/wgpu/Sampler.h"

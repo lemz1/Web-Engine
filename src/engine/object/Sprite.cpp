@@ -46,6 +46,13 @@ void Sprite::Draw(wgpu::RenderPassEncoder renderPass)
     renderPass.draw(4, 1, 0, 0);
 }
 
+void Sprite::SetFilterMode(wgpu::FilterMode filterMode)
+{
+    _filterMode = filterMode; 
+    _sampler = MakeScoped<Sampler>(wgpu::AddressMode::ClampToEdge, _filterMode); 
+    CreateBindGroup();
+}
+
 void Sprite::Construct(
     Ref<Image> image,
     Ref<RenderPipeline> renderPipeline
@@ -84,8 +91,13 @@ void Sprite::Construct(
 
     _uniformBuffer = MakeScoped<Buffer>(wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, sizeof(UniformData));
 
-    _sampler = MakeScoped<Sampler>();
+    _sampler = MakeScoped<Sampler>(wgpu::AddressMode::ClampToEdge, _filterMode);
 
+    CreateBindGroup();
+}
+
+void Sprite::CreateBindGroup()
+{
     Vector<wgpu::BindGroupEntry> bindGroupEntries(3, wgpu::Default);
     {
         wgpu::BindGroupEntry& bindGroupEntry = bindGroupEntries[0];
