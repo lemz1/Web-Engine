@@ -3,26 +3,28 @@
 #include <webgpu/webgpu.hpp>
 #include "engine/util/Types.h"
 #include "engine/wgpu/ShaderModule.h"
+#include "engine/wgpu/Buffer.h"
 
 class RenderPipeline 
 {
 public:
     RenderPipeline(
-        std::string_view vertexSource,
-        std::string_view fragmentSource,
-        const Vector<wgpu::VertexBufferLayout>& vertexBufferLayouts
+        std::string_view shaderSource,
+        const Vector<wgpu::VertexBufferLayout>& vertexBufferLayouts,
+        const Vector<wgpu::BindGroupLayoutEntry>& bindGroupLayoutEntries
     );
     ~RenderPipeline();
 
-    const Scoped<ShaderModule>& GetVertexModule() const { return _vertexModule; }
-    const Scoped<ShaderModule>& GetFragmentModule() const { return _fragmentModule; }
+    const Scoped<ShaderModule>& GetShaderModule() const { return _shaderModule; }
+    wgpu::BindGroupLayout GetBindGroupLayout() const { return _bindGroupLayout; }
     wgpu::PipelineLayout GetPipelineLayout() const { return _pipelineLayout; }
     
     wgpu::RenderPipeline GetPipeline() const { return _pipeline; }
     operator wgpu::RenderPipeline() const { return _pipeline; }
+    operator WGPURenderPipeline() const { return _pipeline; }
 private:
-    Scoped<ShaderModule> _vertexModule = nullptr;
-    Scoped<ShaderModule> _fragmentModule = nullptr;
+    Scoped<ShaderModule> _shaderModule = nullptr;
+    wgpu::BindGroupLayout _bindGroupLayout = nullptr;
     wgpu::PipelineLayout _pipelineLayout = nullptr;
     wgpu::RenderPipeline _pipeline = nullptr;
 };

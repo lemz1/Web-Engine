@@ -1,10 +1,14 @@
+ExeDir = "%{wks.location}/export/%{cfg.system}/%{cfg.buildcfg}/bin"
+LibDir = "%{wks.location}/export/%{cfg.system}/%{cfg.buildcfg}/libs/%{prj.name}"
+ObjDir = "%{wks.location}/export/%{cfg.system}/%{cfg.buildcfg}/objs/%{prj.name}"
+
 workspace "Web-Engine-Example"
     architecture "x64"
     startproject "Web-Engine-Example"
     configurations { "debug", "release" }
 
-    targetdir("%{wks.location}/export/%{cfg.system}/%{cfg.buildcfg}/libs/%{prj.name}")
-    objdir("%{wks.location}/export/%{cfg.system}/%{cfg.buildcfg}/objs/%{prj.name}")
+    targetdir(LibDir)
+    objdir(ObjDir)
 
     defines
     {
@@ -18,7 +22,7 @@ project "Web-Engine-Example"
     language "C++"
     cppdialect "C++17"
 
-    targetdir("%{wks.location}/export/%{cfg.system}/%{cfg.buildcfg}/bin")
+    targetdir(ExeDir)
 
     files { "src/**.h", "src/**.c", "src/**.hpp", "src/**.cpp" }
 
@@ -59,6 +63,22 @@ project "Web-Engine-Example"
 		defines { "WE_LINUX" }
 
     filter {}
+
+    filter "system:windows"
+        postbuildcommands
+        {
+            "mkdir \""..ExeDir.."/assets\"",
+            "{COPY} \"%{prj.location}assets\" \""..ExeDir.."/assets\"",
+        }
+
+    filter "system:linux"
+        local current_directory = os.getcwd()
+        local absWksPath = current_directory:match("(.+)%/[^%/]+$")
+
+        postbuildcommands
+        {
+            "{COPY} \""..absWksPath.."/assets\" \""..ExeDir.."\"",
+        }
 
 group "Dependencies"
     include "../"

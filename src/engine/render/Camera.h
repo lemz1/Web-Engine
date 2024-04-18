@@ -33,6 +33,12 @@ public:
 	void SetFarClipPlane(float farClipPlane) { _farClipPlane = farClipPlane; RecalculateProjection(); }
 	float GetFarClipPlane() const { return _farClipPlane; }
 
+	void SetOrthographic(bool isOrthographic) { _isOrthographic = isOrthographic; RecalculateProjection(); }
+	bool IsOrthographic() const { return _isOrthographic; }
+
+	void SetOrthographicZoom(float orthographicZoom) { _orthographicZoom = Math::Max(orthographicZoom, 0.0001f); RecalculateProjection(); }
+	float GetOrthographicZoom() const { return _orthographicZoom; }
+
 	void SetPosition(const Vec3& position) { _position = position; RecalculateView(); }
 	const Vec3& GetPosition() const { return _position; }
 
@@ -42,17 +48,19 @@ private:
 	void RecalculateProjection();
 	void RecalculateView();
 private:
-	Mat4 _projection;
-	Mat4 _inverseProjection;
-	Mat4 _view;
-	Mat4 _inverseView;
+	Mat4 _projection = Mat4Identity;
+	Mat4 _inverseProjection = Mat4Identity;
+	Mat4 _view = Mat4Identity;
+	Mat4 _inverseView = Mat4Identity;
 
 	uint32_t _width;
 	uint32_t _height;
-	float _verticalFOV;
-	float _nearClipPlane;
-	float _farClipPlane;
-
-	Vec3 _position;
-	Quat _rotation;
+	float _verticalFOV = 45.0f;
+	float _nearClipPlane = 0.1f;
+	float _farClipPlane = 5000.0f;
+	bool _isOrthographic = true;
+	float _orthographicZoom = 1.0f;
+	
+	Vec3 _position = Vec3(0.0f);
+	Quat _rotation = QuatIdentity;
 };

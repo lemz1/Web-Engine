@@ -3,17 +3,17 @@
 #include <webgpu/webgpu.hpp>
 #include "engine/util/Math.h"
 
-class Texture2D
+class Image
 {
 public:
 	// only RGBA8Unorm and RGBA32Float supported
-	Texture2D(
+	Image(
 		void* pixels,
 		uint32_t width,
 		uint32_t height,
 		wgpu::TextureFormat textureFormat
 	);
-	~Texture2D();
+	~Image();
 
 	void Write(void* pixels);
 
@@ -22,9 +22,11 @@ public:
 
 	wgpu::Texture GetTexture() const { return _texture; }
 	operator wgpu::Texture() const { return _texture; }
+	operator WGPUTexture() const { return _texture; }
 
 	wgpu::TextureView GetTextureView() const { return _textureView; }
 	operator wgpu::TextureView() const { return _textureView; }
+	operator WGPUTextureView() const { return _textureView; }
 
 	wgpu::TextureFormat GetTextureFormat() const { return _textureFormat; }
 private:

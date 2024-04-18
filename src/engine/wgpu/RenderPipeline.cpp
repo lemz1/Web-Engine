@@ -3,24 +3,23 @@
 #include "engine/core/Application.h"
 
 RenderPipeline::RenderPipeline(
-	std::string_view vertexSource,
-	std::string_view fragmentSource,
-	const Vector<wgpu::VertexBufferLayout>& vertexBufferLayouts
+	std::string_view shaderSource,
+	const Vector<wgpu::VertexBufferLayout>& vertexBufferLayouts,
+	const Vector<wgpu::BindGroupLayoutEntry>& bindGroupLayoutEntries
 )
 {
     wgpu::Device device = Application::GetWGPUContext()->device;
     wgpu::Queue queue = Application::GetWGPUContext()->queue;
 	wgpu::TextureFormat swapChainFormat = Application::GetWGPUContext()->swapChainFormat;
     
-	_vertexModule = MakeScoped<ShaderModule>(vertexSource);
-	_fragmentModule = MakeScoped<ShaderModule>(fragmentSource);
+	_shaderModule = MakeScoped<ShaderModule>(shaderSource);
 
     wgpu::RenderPipelineDescriptor pipelineDesc = wgpu::Default;
     pipelineDesc.label = "Render Pipeline";
 
     pipelineDesc.vertex.bufferCount = (uint32_t)vertexBufferLayouts.size();
     pipelineDesc.vertex.buffers = vertexBufferLayouts.data();
-    pipelineDesc.vertex.module = _vertexModule->GetShaderModule();
+    pipelineDesc.vertex.module = *_shaderModule;
 	pipelineDesc.vertex.entryPoint = "vsMain";
 	pipelineDesc.vertex.constantCount = 0;
 	pipelineDesc.vertex.constants = nullptr;
@@ -32,7 +31,7 @@ RenderPipeline::RenderPipeline(
 
     // Fragment State
     wgpu::FragmentState fragmentState;
-	fragmentState.module = _fragmentModule->GetShaderModule();
+	fragmentState.module = *_shaderModule;
 	fragmentState.entryPoint = "fsMain";
 	fragmentState.constantCount = 0;
 	fragmentState.constants = nullptr;
@@ -68,8 +67,14 @@ RenderPipeline::RenderPipeline(
 	pipelineDesc.multisample.mask = ~0u;
 	pipelineDesc.multisample.alphaToCoverageEnabled = false;
 
+	wgpu::BindGroupLayoutDescriptor bindGroupLayoutDesc = wgpu::Default;
+	bindGroupLayoutDesc.entryCount = bindGroupLayoutEntries.size();
+	bindGroupLayoutDesc.entries = bindGroupLayoutEntries.data();
+	_bindGroupLayout = device.createBindGroupLayout(bindGroupLayoutDesc);
+
     wgpu::PipelineLayoutDescriptor pipelineLayoutDesc = wgpu::Default;
-    pipelineLayoutDesc.bindGroupLayoutCount = 0;
+	pipelineLayoutDesc.bindGroupLayoutCount = 1;
+	pipelineLayoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&_bindGroupLayout;
     _pipelineLayout = device.createPipelineLayout(pipelineLayoutDesc);
     pipelineDesc.layout = _pipelineLayout;
 
@@ -80,4 +85,5 @@ RenderPipeline::~RenderPipeline()
 {
     _pipeline.release();
     _pipelineLayout.release();
+	_bindGroupLayout.release();
 }

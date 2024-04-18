@@ -37,6 +37,9 @@ void Buffer::Write(
     if (_size != size) 
     {
         _size = size;
+
+        _buffer.destroy();
+        _buffer.release();
         
         wgpu::BufferDescriptor bufferDesc = wgpu::Default;
         bufferDesc.label = "Buffer";

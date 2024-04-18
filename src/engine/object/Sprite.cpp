@@ -1,20 +1,68 @@
 #include "Sprite.h"
 
+#include "engine/render/Renderer.h"
 #include "engine/util/AssetManager.h"
+#include "engine/core/Application.h"
+#include "engine/debug/Instrumentor.h"
 
-static Ref<RenderPipeline> SpriteRenderPipeline = nullptr;
-static void CreateDefaultSpriteRenderPipeline();
-
-Sprite::Sprite()
+Sprite::Sprite(
+    Color color,
+    Ref<RenderPipeline> renderPipeline
+)
 {
-    if (!SpriteRenderPipeline) 
+    Construct(MakeRef<Image>(&color, 1, 1, wgpu::TextureFormat::RGBA8Unorm), renderPipeline);
+}
+
+Sprite::Sprite(
+    Ref<Image> image,
+    Ref<RenderPipeline> renderPipeline
+)
+{
+    Construct(image, renderPipeline);
+}
+
+Sprite::~Sprite()
+{
+    _bindGroup.release();
+}
+
+void Sprite::Draw(wgpu::RenderPassEncoder renderPass)
+{
+    if (!camera)
     {
-        CreateDefaultSpriteRenderPipeline();
+        return;
+    }
+    
+    UpdateModel();
+    UniformData uniformData = {};
+    uniformData.modelViewProjection = camera->GetProjection() * camera->GetInverseView() * _model;
+    uniformData.tint = Color::Normalize(tint);
+    _uniformBuffer->Write(&uniformData, sizeof(UniformData));
+
+    renderPass.setPipeline(*renderPipeline);
+    renderPass.setBindGroup(0, *_bindGroup, 0, nullptr);
+    renderPass.setVertexBuffer(0, *_vertexBuffer, 0, _vertexBuffer->GetSize());
+    renderPass.setVertexBuffer(1, *_texCoordBuffer, 0, _texCoordBuffer->GetSize());
+    renderPass.draw(4, 1, 0, 0);
+}
+
+void Sprite::Construct(
+    Ref<Image> image,
+    Ref<RenderPipeline> renderPipeline
+)
+{
+    this->image = image;
+
+    if (renderPipeline)
+    {
+        this->renderPipeline = renderPipeline;
+    }
+    else
+    {
+        this->renderPipeline = Renderer::GetDefaultRenderPipeline();
     }
 
-    renderPipeline = SpriteRenderPipeline;
-
-    Vector<Vec2> quad = 
+    Vector<Vec2> quad =
     {
         Vec2( 0.5f, -0.5f),
         Vec2(-0.5f, -0.5f),
@@ -24,98 +72,48 @@ Sprite::Sprite()
     _vertexBuffer = MakeScoped<Buffer>(wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst, quad.size() * sizeof(Vec2));
     _vertexBuffer->Write(quad.data(), _vertexBuffer->GetSize());
 
-    Vector<Vec2> texCoords = 
+    Vector<Vec2> texCoords =
     {
-        Vec2(1.0f, 0.0f),
-        Vec2(0.0f, 0.0f),
         Vec2(1.0f, 1.0f),
         Vec2(0.0f, 1.0f),
+        Vec2(1.0f, 0.0f),
+        Vec2(0.0f, 0.0f),
     };
     _texCoordBuffer = MakeScoped<Buffer>(wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst, texCoords.size() * sizeof(Vec2));
     _texCoordBuffer->Write(texCoords.data(), _texCoordBuffer->GetSize());
+
+    _uniformBuffer = MakeScoped<Buffer>(wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst, sizeof(UniformData));
+
+    _sampler = MakeScoped<Sampler>();
+
+    Vector<wgpu::BindGroupEntry> bindGroupEntries(3, wgpu::Default);
+    {
+        wgpu::BindGroupEntry& bindGroupEntry = bindGroupEntries[0];
+        bindGroupEntry.binding = 0;
+        bindGroupEntry.offset = 0;
+        bindGroupEntry.sampler = *_sampler;
+    }
+    {
+        wgpu::BindGroupEntry& bindGroupEntry = bindGroupEntries[1];
+        bindGroupEntry.binding = 1;
+        bindGroupEntry.offset = 0;
+        bindGroupEntry.textureView = *image;
+    }
+    {
+        wgpu::BindGroupEntry& bindGroupEntry = bindGroupEntries[2];
+        bindGroupEntry.binding = 2;
+        bindGroupEntry.offset = 0;
+        bindGroupEntry.buffer = *_uniformBuffer;
+        bindGroupEntry.size = _uniformBuffer->GetSize();
+    }
+
+    _bindGroup = MakeScoped<BindGroup>(bindGroupEntries, this->renderPipeline->GetBindGroupLayout());
 }
 
-Sprite::~Sprite()
-{}
-
-void Sprite::Draw(wgpu::RenderPassEncoder renderPass)
+void Sprite::UpdateModel()
 {
-    renderPass.setPipeline(*renderPipeline);
-    renderPass.setVertexBuffer(0, *_vertexBuffer, 0, _vertexBuffer->GetSize());
-    renderPass.setVertexBuffer(1, *_texCoordBuffer, 0, _texCoordBuffer->GetSize());
-    renderPass.draw(4, 1, 0, 0);
-}
-
-const char* Sprite::_VertexSource = R"(
-struct VertexInput {
-    @location(0) position: vec2<f32>,
-    @location(1) texCoord: vec2<f32>,
-};
-
-struct VertexOutput {
-    @builtin(position) clipPosition: vec4<f32>,
-    @location(0) texCoord: vec2<f32>,
-};
-
-@vertex
-fn vsMain(in: VertexInput) -> VertexOutput {
-    var out: VertexOutput;
-
-    out.clipPosition = vec4<f32>(in.position, 0.0, 1.0);
-    out.texCoord = in.texCoord;
-    return out;
-}
-)";
-
-const char* Sprite::_FragmentSource = R"(
-struct VertexOutput {
-    @builtin(position) clipPosition: vec4<f32>,
-    @location(0) texCoord: vec2<f32>,
-};
-
-@fragment
-fn fsMain(in: VertexOutput) -> @location(0) vec4<f32> {
-	let color: vec3<f32> = vec3<f32>(in.texCoord, 0.0);
-	let gammaCorrectedColor: vec3<f32> = pow(color, vec3<f32>(2.2));
-	return vec4<f32>(gammaCorrectedColor, 1.0);
-}
-)";
-
-void CreateDefaultSpriteRenderPipeline()
-{
-    Vector<wgpu::VertexAttribute> vertexAttributes(2, wgpu::Default);
-    {
-        wgpu::VertexAttribute& vertexAttribute = vertexAttributes[0];
-        vertexAttribute.shaderLocation = 0;
-        vertexAttribute.offset = 0;
-        vertexAttribute.format = wgpu::VertexFormat::Float32x2;
-    }
-    {
-        wgpu::VertexAttribute& vertexAttribute = vertexAttributes[1];
-        vertexAttribute.shaderLocation = 1;
-        vertexAttribute.offset = 0;
-        vertexAttribute.format = wgpu::VertexFormat::Float32x2;
-    }
-
-    Vector<wgpu::VertexBufferLayout> vertexBufferLayouts(2, wgpu::Default);
-    {
-        wgpu::VertexBufferLayout& vertexBufferLayout = vertexBufferLayouts[0];
-        vertexBufferLayout.attributeCount = 1;
-        vertexBufferLayout.attributes = &vertexAttributes[0];
-        vertexBufferLayout.arrayStride = sizeof(Vec2);
-        vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex;
-    }
-    {
-        wgpu::VertexBufferLayout& vertexBufferLayout = vertexBufferLayouts[1];
-        vertexBufferLayout.attributeCount = 1;
-        vertexBufferLayout.attributes = &vertexAttributes[1];
-        vertexBufferLayout.arrayStride = sizeof(Vec2);
-        vertexBufferLayout.stepMode = wgpu::VertexStepMode::Vertex; 
-    }
-
-    SpriteRenderPipeline = MakeRef<RenderPipeline>(
-        Sprite::GetDefaultVertexSource(), 
-        Sprite::GetDefaultFragmentSource(), 
-        vertexBufferLayouts
-    );
+    _model  = glm::translate(Mat4Identity, transform.position);
+    _model *= glm::mat4_cast(transform.rotation);
+    float aspect = (float)image->GetWidth() / (float)image->GetHeight();
+    _model *= glm::scale(Mat4Identity, Vec3(transform.scale.x * (0.5f * aspect), transform.scale.y, transform.scale.z));
 }

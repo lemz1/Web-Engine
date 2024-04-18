@@ -19,6 +19,7 @@ public:
 
     wgpu::Buffer GetBuffer() const { return _buffer; }
     operator wgpu::Buffer() const { return _buffer; }
+    operator WGPUBuffer() const { return _buffer; }
 
     uint32_t GetSize() const { return _size; }
     wgpu::BufferUsageFlags GetUsageFlags() const { return _usage; }

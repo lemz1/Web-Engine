@@ -26,9 +26,11 @@ public:
 	
 	wgpu::Texture GetTexture() const { return _texture; }
 	operator wgpu::Texture() const { return _texture; }
+	operator WGPUTexture() const { return _texture; }
 
 	wgpu::TextureView GetTextureView() const { return _textureView; }
 	operator wgpu::TextureView() const { return _textureView; }
+	operator WGPUTextureView() const { return _textureView; }
 
 	static wgpu::TextureFormat GetTextureFormat() { return DepthTexture::_Format; }
 private:

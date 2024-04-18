@@ -11,6 +11,7 @@ public:
 
     wgpu::ShaderModule GetShaderModule() const { return _shaderModule; }
     operator wgpu::ShaderModule() const { return _shaderModule; }
+    operator WGPUShaderModule() const { return _shaderModule; }
 private:
     wgpu::ShaderModule _shaderModule = nullptr;
 };

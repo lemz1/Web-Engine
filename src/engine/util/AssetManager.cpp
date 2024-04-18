@@ -48,27 +48,18 @@ wgpu::ShaderModule AssetManager::LoadShaderModule(std::string_view filePath)
     return device.createShaderModule(shaderDesc);
 }
 
-Ref<Texture2D> AssetManager::LoadTexture2D(
-    std::string_view filePath,
-    wgpu::TextureFormat textureFormat
-)
+Ref<Image> AssetManager::LoadImage(std::string_view filePath)
 {
-    void* pixels;
+    uint8_t* pixels;
     int width;
     int height;
     int numComponents;
-    switch (textureFormat)
-    {
-        case wgpu::TextureFormat::RGBA8Unorm:
-            pixels = stbi_load(filePath.data(), &width, &height, &numComponents, 4);
-            break;
-        case wgpu::TextureFormat::RGBA32Float:
-            pixels = stbi_loadf(filePath.data(), &width, &height, &numComponents, 4);
-            break;
-        default:
-            std::cerr << "texture format not supported: " << textureFormat << std::endl;
-            return nullptr;
-    }
+    pixels = stbi_load(filePath.data(), &width, &height, &numComponents, 4);
 
-    return MakeRef<Texture2D>(pixels, width, height, textureFormat);
+    if (!pixels)
+    {
+        return nullptr;
+    }
+    
+    return MakeRef<Image>(pixels, width, height, wgpu::TextureFormat::RGBA8Unorm);
 }

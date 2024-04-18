@@ -37,3 +37,13 @@ float Math::RemapToRange(
 {
     return (value - oldMax) / (oldMax - oldMin) * (newMax - newMin) + newMin;
 }
+
+float Math::Max(float a, float b)
+{
+	return (a > b) ? a : b;
+}
+
+float Math::Min(float a, float b)
+{
+	return (a < b) ? a : b;
+}

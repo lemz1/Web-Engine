@@ -1,9 +1,6 @@
 #pragma once
 
 #include "engine/util/Types.h"
-#include <cmath>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 class Math
 {
@@ -25,5 +22,13 @@ public:
 		float oldMax,
 		float newMin,
 		float newMax
+	);
+	static float Max(
+		float a,
+		float b
+	);
+	static float Min(
+		float a,
+		float b
 	);
 };

@@ -1,8 +1,8 @@
-#include "Texture2D.h"
+#include "Image.h"
 
 #include "engine/core/Application.h"
 
-Texture2D::Texture2D(
+Image::Image(
 	void* pixels,
 	uint32_t width, 
 	uint32_t height,
@@ -42,14 +42,14 @@ Texture2D::Texture2D(
 	Write(pixels);
 }
 
-Texture2D::~Texture2D()
+Image::~Image()
 {
 	_textureView.release();
 	_texture.destroy();
 	_texture.release();
 }
 
-void Texture2D::Write(void* pixels)
+void Image::Write(void* pixels)
 {
 	wgpu::Queue queue = Application::GetWGPUContext()->queue;
 

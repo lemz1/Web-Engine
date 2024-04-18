@@ -19,7 +19,13 @@ WGPUContext::WGPUContext(
 	adapter = instance.requestAdapter(adapterOpts);
 
 	wgpu::SupportedLimits supportedLimits;
+	#ifdef __EMSCRIPTEN__
+	// Error in Chrome so we hardcode values:
+	supportedLimits.limits.minStorageBufferOffsetAlignment = 256;
+	supportedLimits.limits.minUniformBufferOffsetAlignment = 256;
+	#else
 	adapter.getLimits(&supportedLimits);
+	#endif
 
 	wgpu::RequiredLimits requiredLimits = wgpu::Default;
 	requiredLimits.limits.maxVertexAttributes = 3;
@@ -44,6 +50,7 @@ WGPUContext::WGPUContext(
 	requiredLimits.limits.maxComputeWorkgroupSizeZ = 1;
 	requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 128;
 	requiredLimits.limits.maxComputeWorkgroupsPerDimension = 256;
+	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 
 	wgpu::DeviceDescriptor deviceDesc;
 	deviceDesc.label = "Device";

@@ -54,16 +54,16 @@ project "Web-Engine"
 		defines { "WE_LINUX" }
 
     filter "system:windows"
-        links { "%{prj.location}/vendor/webgpu/bin/windows-x86_64/wgpu_native.dll.lib" }
+        links { "%{prj.location}/vendor/webgpu/bin/windows-%{cfg.architecture}/wgpu_native.dll.lib" }
 
     filter "system:linux"
-        libdirs { "%{prj.location}/vendor/webgpu/bin/linux-x86_64" }
+        libdirs { "%{prj.location}/vendor/webgpu/bin/linux-%{cfg.architecture}" }
         links { "wgpu_native" }
 
     filter "system:windows"
         postbuildcommands
         {
-            "{COPY} \"%{prj.location}/vendor/webgpu/bin/windows-%{cfg.architecture}/wgpu_native.dll\" \"%{cfg.targetdir}/../../bin/\"",
+            "{COPY} \"%{prj.location}/vendor/webgpu/bin/windows-%{cfg.architecture}/wgpu_native.dll\" \""..ExeDir.."/\"",
         }
 
     filter "system:linux"
@@ -72,7 +72,7 @@ project "Web-Engine"
 
         postbuildcommands
         {
-            "{COPY} \""..absWksPath.."/vendor/webgpu/bin/linux-%{cfg.architecture}/libwgpu_native.so\" \"%{cfg.targetdir}/../../bin/\"",
+            "{COPY} \""..absWksPath.."/vendor/webgpu/bin/linux-%{cfg.architecture}/libwgpu_native.so\" \""..ExeDir.."/\"",
         }
 
     filter {}

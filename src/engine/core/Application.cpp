@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include "engine/core/Input.h"
+#include "engine/render/Renderer.h"
 
 Application* Application::_Instance = nullptr;
 
@@ -22,6 +23,8 @@ Application::Application(
 
 	_wgpuContext = new WGPUContext(_window->GetHandle(), _window->GetWidth(), _window->GetHeight());
 
+	Renderer::Init();
+
 	_myguiContext = new MyGuiContext();
 
 	_state = initialState;
@@ -34,6 +37,9 @@ Application::~Application()
 	delete _state;
 
 	delete _myguiContext;
+
+	Renderer::Shutdown();
+
 	delete _wgpuContext;
 	delete _window;
 }
