@@ -1,3 +1,26 @@
+WebEngineIncludeDirs =
+{
+    "src",
+    "vendor/glfw/glfw/include",
+    "vendor/glm/glm",
+    "vendor/webgpu/include",
+    "vendor/glfw3webgpu",
+    "vendor/stb_image",
+    "vendor/imgui", -- i like this one better
+    "vendor/imgui/imgui" -- im required to do this
+}
+
+function PrefixIncludeDirs(prefix, includeDirs)
+    local prefixedIncludeDirs = {}
+
+    for i, dir in ipairs(includeDirs) do
+        local prefixedDir = prefix..dir
+        table.insert(prefixedIncludeDirs, prefixedDir)
+    end
+
+    return prefixedIncludeDirs
+end
+
 include "vendor/glfw"
 include "vendor/glfw3webgpu"
 include "vendor/imgui"
@@ -18,14 +41,7 @@ project "Web-Engine"
 
     includedirs
     {
-        "src",
-        "vendor/glfw/glfw/include",
-        "vendor/glm/glm",
-        "vendor/webgpu/include",
-        "vendor/glfw3webgpu",
-        "vendor/stb_image",
-        "vendor/imgui", -- i like this one better
-        "vendor/imgui/imgui" -- im required to do this
+        WebEngineIncludeDirs
     }
 
     links
