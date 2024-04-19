@@ -5,75 +5,13 @@
 #include "engine/core/Application.h"
 #include "engine/debug/Instrumentor.h"
 
-Sprite::Sprite(
-    Color color,
-    Ref<RenderPipeline> renderPipeline
-)
+Sprite::Sprite(const Transform& transform)
 {
-    Construct(MakeRef<Image>(&color, 1, 1, wgpu::TextureFormat::RGBA8Unorm), renderPipeline);
-}
-
-Sprite::Sprite(
-    Ref<Image> image,
-    Ref<RenderPipeline> renderPipeline
-)
-{
-    Construct(image, renderPipeline);
-}
-
-Sprite::~Sprite()
-{
-    _bindGroup.release();
-}
-
-void Sprite::Draw(wgpu::RenderPassEncoder renderPass)
-{
-    if (!camera)
-    {
-        return;
-    }
-    
-    UpdateModel();
-    UniformData uniformData = {};
-    uniformData.modelViewProjection = camera->GetProjection() * camera->GetInverseView() * _model;
-    uniformData.tint = Color::Normalize(tint);
-    _uniformBuffer->Write(&uniformData, sizeof(UniformData));
-
-    renderPass.setPipeline(*renderPipeline);
-    renderPass.setBindGroup(0, *_bindGroup, 0, nullptr);
-    renderPass.setVertexBuffer(0, *_vertexBuffer, 0, _vertexBuffer->GetSize());
-    renderPass.setVertexBuffer(1, *_texCoordBuffer, 0, _texCoordBuffer->GetSize());
-    renderPass.draw(4, 1, 0, 0);
-}
-
-void Sprite::SetFilterMode(wgpu::FilterMode filterMode)
-{
-    _filterMode = filterMode; 
-    _sampler = MakeScoped<Sampler>(wgpu::AddressMode::ClampToEdge, _filterMode); 
-    CreateBindGroup();
-}
-
-void Sprite::Construct(
-    Ref<Image> image,
-    Ref<RenderPipeline> renderPipeline
-)
-{
-    this->image = image;
-
-    if (renderPipeline)
-    {
-        this->renderPipeline = renderPipeline;
-    }
-    else
-    {
-        this->renderPipeline = Renderer::GetDefaultRenderPipeline();
-    }
-
     Vector<Vec2> quad =
     {
-        Vec2( 0.5f, -0.5f),
+        Vec2(0.5f, -0.5f),
         Vec2(-0.5f, -0.5f),
-        Vec2( 0.5f,  0.5f),
+        Vec2(0.5f,  0.5f),
         Vec2(-0.5f,  0.5f),
     };
     _vertexBuffer = MakeScoped<Buffer>(wgpu::BufferUsage::Vertex | wgpu::BufferUsage::CopyDst, quad.size() * sizeof(Vec2));
@@ -93,6 +31,59 @@ void Sprite::Construct(
 
     _sampler = MakeScoped<Sampler>(wgpu::AddressMode::ClampToEdge, _filterMode);
 
+    renderPipeline = Renderer::GetDefaultRenderPipeline();
+
+    // CreateBindGroup();
+}
+
+Sprite::~Sprite()
+{
+    _bindGroup.release();
+}
+
+void Sprite::Draw(wgpu::RenderPassEncoder renderPass)
+{
+    if (!camera || !_image || !renderPipeline)
+    {
+        return;
+    }
+    
+    UpdateModel();
+    UniformData uniformData = {};
+    uniformData.modelViewProjection = camera->GetProjection() * camera->GetInverseView() * _model;
+    uniformData.tint = Color::Normalize(tint);
+    _uniformBuffer->Write(&uniformData, sizeof(UniformData));
+
+    renderPass.setPipeline(*renderPipeline);
+    renderPass.setBindGroup(0, *_bindGroup, 0, nullptr);
+    renderPass.setVertexBuffer(0, *_vertexBuffer, 0, _vertexBuffer->GetSize());
+    renderPass.setVertexBuffer(1, *_texCoordBuffer, 0, _texCoordBuffer->GetSize());
+    renderPass.draw(4, 1, 0, 0);
+}
+
+void Sprite::MakeImage(Color color)
+{
+    _image = MakeRef<Image>(&color, 1, 1, wgpu::TextureFormat::RGBA8Unorm);
+
+    CreateBindGroup();
+}
+
+void Sprite::SetImage(const Ref<Image>& image)
+{
+    _image = image;
+
+    if (!_image)
+    {
+        return;
+    }
+
+    CreateBindGroup();
+}
+
+void Sprite::SetFilterMode(wgpu::FilterMode filterMode)
+{
+    _filterMode = filterMode; 
+    _sampler = MakeScoped<Sampler>(wgpu::AddressMode::ClampToEdge, _filterMode); 
     CreateBindGroup();
 }
 
@@ -109,7 +100,7 @@ void Sprite::CreateBindGroup()
         wgpu::BindGroupEntry& bindGroupEntry = bindGroupEntries[1];
         bindGroupEntry.binding = 1;
         bindGroupEntry.offset = 0;
-        bindGroupEntry.textureView = *image;
+        bindGroupEntry.textureView = *_image;
     }
     {
         wgpu::BindGroupEntry& bindGroupEntry = bindGroupEntries[2];
@@ -126,6 +117,6 @@ void Sprite::UpdateModel()
 {
     _model  = glm::translate(Mat4Identity, transform.position);
     _model *= glm::mat4_cast(transform.rotation);
-    float aspect = (float)image->GetWidth() / (float)image->GetHeight();
+    float aspect = (float)_image->GetWidth() / (float)_image->GetHeight();
     _model *= glm::scale(Mat4Identity, Vec3(transform.scale.x * (0.5f * aspect), transform.scale.y, transform.scale.z));
 }

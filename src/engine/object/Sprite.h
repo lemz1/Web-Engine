@@ -13,33 +13,25 @@
 class Sprite 
 {
 public:
-    Sprite(
-        Color color,
-        Ref<RenderPipeline> renderPipeline = nullptr
-    );
-    Sprite(
-        Ref<Image> image,
-        Ref<RenderPipeline> renderPipeline = nullptr
-    );
+    Sprite(const Transform& transform = {});
     ~Sprite();
 
     void Draw(wgpu::RenderPassEncoder renderPass);
 
+    void MakeImage(Color color);
+
+    void SetImage(const Ref<Image>& image);
+    const Ref<Image>& GetImage() const { return _image; }
+
     void SetFilterMode(wgpu::FilterMode filterMode);
     wgpu::FilterMode GetFilterMode() const { return _filterMode; }
 public:
-    Ref<Image> image = nullptr;
     Ref<RenderPipeline> renderPipeline = nullptr;
     Ref<Camera> camera = nullptr;
 
     Transform transform{};
     Color tint{};
 private:
-    void Construct(
-        Ref<Image> image,
-        Ref<RenderPipeline> renderPipeline
-    );
-
     void CreateBindGroup();
 
     void UpdateModel();
@@ -50,6 +42,7 @@ private:
     Scoped<BindGroup> _bindGroup = nullptr;
     Scoped<Sampler> _sampler = nullptr;
 
+    Ref<Image> _image = nullptr;
     wgpu::FilterMode _filterMode = wgpu::FilterMode::Linear;
 
     Mat4 _model = Mat4Identity;
